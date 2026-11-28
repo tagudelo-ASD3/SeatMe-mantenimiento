@@ -42,6 +42,21 @@ const filters = [
   { key: 'past', label: 'Historial' },
 ]
 
+const ACTIVE_STATUSES = ['PENDING', 'CONFIRMED', 'CHECKED_IN']
+const PAST_STATUSES = ['COMPLETED', 'CANCELLED']
+
+/**
+ * Predicado de pertenencia de una reserva a cada filtro.
+ *
+ * Es la unica fuente de verdad de los estados por filtro: la consumen tanto
+ * el listado filtrado como los contadores, para no duplicar la logica.
+ */
+const filterPredicates: Record<string, (reservation: Reservation) => boolean> = {
+  all: () => true,
+  active: (reservation) => ACTIVE_STATUSES.includes(reservation.status),
+  past: (reservation) => PAST_STATUSES.includes(reservation.status),
+}
+
 onMounted(async () => {
   await loadReservations()
 })
@@ -73,17 +88,8 @@ async function loadReservations() {
 }
 
 const filteredReservations = computed(() => {
-  if (activeFilter.value === 'active') {
-    return reservations.value.filter((r) =>
-      ['PENDING', 'CONFIRMED', 'CHECKED_IN'].includes(r.status),
-    )
-  }
-
-  if (activeFilter.value === 'past') {
-    return reservations.value.filter((r) => ['COMPLETED', 'CANCELLED'].includes(r.status))
-  }
-
-  return reservations.value
+  const matchesFilter = filterPredicates[activeFilter.value] ?? filterPredicates.all
+  return reservations.value.filter(matchesFilter)
 })
 
 /**
@@ -237,7 +243,7 @@ function getMosaicClass(index: number): string {
               : 'bg-white text-gray-600 border border-gray-200 hover:border-primary-300 hover:text-primary-700',
           ]"
         >
-          {{ filter.label }}
+          {{ filter.label }} ({{ reservationCounts[filter.key] }})
         </button>
       </div>
 
