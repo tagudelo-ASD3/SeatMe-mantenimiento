@@ -101,6 +101,15 @@ const emptyMessage = computed(() => {
   return 'Aún no tienes reservas'
 })
 
+/**
+ * Mensaje que se muestra cuando el filtro elegido no tiene reservas.
+ */
+const emptyMessage = computed(() => {
+  if (activeFilter.value === 'active') return 'No tienes reservas activas'
+  if (activeFilter.value === 'past') return 'No tienes reservas en tu historial'
+  return 'Aún no tienes reservas'
+})
+
 async function setFilter(key: string) {
   activeFilter.value = key
 
