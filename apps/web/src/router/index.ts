@@ -10,6 +10,23 @@ import AdminDesksView from '@/views/admin/AdminDesksView.vue'
 import AdminReservationsView from '@/views/admin/AdminReservationsView.vue'
 import LandingView from '@/views/landing/LandingView.vue'
 import ProfileView from '@/views/profile/ProfileView.vue'
+import NotFoundView from '@/views/NotFoundView.vue'
+
+/**
+ * Metadatos propios de cada ruta.
+ *
+ * Declararlos aqui le da tipado a `to.meta.title` y `to.meta.requiresAdmin`
+ * en los guards, en lugar de recurrir a un cast en cada uso.
+ */
+declare module 'vue-router' {
+  interface RouteMeta {
+    title?: string
+    requiresAdmin?: boolean
+  }
+}
+
+/** Nombre de la aplicacion, sufijo de todos los titulos de pestaña. */
+const APP_NAME = 'SeatMe'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -18,55 +35,66 @@ const router = createRouter({
       path: '/login',
       name: 'login',
       component: LoginView,
+      meta: { title: 'Iniciar sesión' },
     },
     {
       path: '/register',
       name: 'register',
       component: RegisterView,
+      meta: { title: 'Crear cuenta' },
     },
     {
       path: '/dashboard',
       name: 'dashboard',
       component: DashboardView,
+      meta: { title: 'Dashboard' },
     },
     {
       path: '/my-reservations',
       name: 'reservations',
       component: MyReservationsView,
+      meta: { title: 'Mis Reservas' },
     },
     {
       path: '/admin',
       name: 'admin',
       component: AdminDashboardView,
-      meta: { requiresAdmin: true },
+      meta: { requiresAdmin: true, title: 'Panel de Administración' },
     },
     {
       path: '/admin/zones',
       name: 'admin-zones',
       component: AdminZonesView,
-      meta: { requiresAdmin: true },
+      meta: { requiresAdmin: true, title: 'Zonas' },
     },
     {
       path: '/admin/desks',
       name: 'admin-desks',
       component: AdminDesksView,
-      meta: { requiresAdmin: true },
+      meta: { requiresAdmin: true, title: 'Escritorios' },
     },
     {
       path: '/admin/reservations',
       name: 'admin-reservations',
       component: AdminReservationsView,
-      meta: { requiresAdmin: true },
+      meta: { requiresAdmin: true, title: 'Gestión de Reservas' },
     },
     {
       path: '/profile',
       name: 'profile',
       component: ProfileView,
+      meta: { title: 'Mi Perfil' },
     },
     {
       path: '/',
       name: 'landing',
       component: LandingView,
+    },
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'not-found',
+      component: NotFoundView,
+      meta: { title: 'Página no encontrada' },
     },
   ],
 })
@@ -75,6 +103,9 @@ const router = createRouter({
  * Route guards
  */
 router.beforeEach(async (to) => {
+  // La página 404 debe ser accesible tanto con sesión como sin ella.
+  if (to.name === 'not-found') return
+
   const token = localStorage.getItem('token')
 
   // rutas que no requieren autenticacion
@@ -111,6 +142,17 @@ router.beforeEach(async (to) => {
       return { name: 'login' }
     }
   }
+})
+
+/**
+ * Sincroniza el titulo de la pestaña con la ruta activa.
+ *
+ * Se ejecuta despues de cada navegacion confirmada, de modo que las
+ * redirecciones de los guards tambien quedan reflejadas. Cuando la ruta no
+ * declara `meta.title`, la pestaña muestra solo el nombre de la aplicacion.
+ */
+router.afterEach((to) => {
+  document.title = to.meta.title ? `${to.meta.title} · ${APP_NAME}` : APP_NAME
 })
 
 export default router
